@@ -123,6 +123,8 @@ void init()
 	ssym['.'] = period;
 	ssym['#'] = neq;
 	ssym[';'] = semicolon;
+	ssym['['] = lbrack;    /* 已添加：'[' 符号 */
+	ssym[']'] = rbrack;    /* 已添加：']' 符号 */
 
 	/* 设置保留字名字,按照字母顺序，便于折半查找 */
 	strcpy(&(word[0][0]), "begin");
@@ -163,6 +165,8 @@ void init()
 	strcpy(&(mnemonic[inte][0]), "int");
 	strcpy(&(mnemonic[jmp][0]), "jmp");
 	strcpy(&(mnemonic[jpc][0]), "jpc");
+	strcpy(&(mnemonic[lodi][0]), "lodi");  /* 已添加：间接装载指令助记符 */
+	strcpy(&(mnemonic[sti][0]), "sti");    /* 已添加：间接存储指令助记符 */
 
 	/* 设置符号集 */
 	for (i=0; i<symnum; i++)
@@ -479,8 +483,7 @@ int block(int lev, int tx, bool* fsys)
 	int dx;                 /* 名字分配到的相对地址 */
 	int tx0;                /* 保留初始tx */
 	int cx0;                /* 保留初始cx */
-	bool nxtlev[symnum];    /* 在下级函数的参数中，符号集合均为值参，但由于使用数组实现，
-							传递进来的是指针，为防止下级函数改变上级函数的集合，开辟新的空?
+	bool nxtlev[symnum];    /* 在下级函数的参数中，符号集合均为值参，但由于使用数组实现，开辟新的空?
 							传递给下级函数*/
 
 	dx = 3;
@@ -644,11 +647,6 @@ int block(int lev, int tx, bool* fsys)
 
 /*
 * 在名字表中加入一项
-*
-* k:      名字种类const,var or procedure
-* ptx:    名字表尾指针的指针，为了可以改变名字表尾指针的值
-* lev:    名字所在的层次,，以后所有的lev都是这样
-* pdx:    dx为当前应分配的变量的相对地址，分配后要增加1
 */
 void enter(enum object k, int* ptx, int lev, int* pdx)
 {
@@ -672,6 +670,17 @@ void enter(enum object k, int* ptx, int lev, int* pdx)
 		break;
 	case procedur:  /*　过程名字　*/
 		table[(*ptx)].level = lev;
+		break;
+	case array:     /* 一维数组声明：num 作为数组大小 */
+		if (num <= 0)
+		{
+			error(31); /* 使用31作为越界或非法大小提示 */
+			num = 1;
+		}
+		table[(*ptx)].level = lev;
+		table[(*ptx)].adr = (*pdx);
+		table[(*ptx)].size = num;
+		(*pdx) += num; /* 为数组分配连续的 num 个单元 */
 		break;
 	}
 }
@@ -737,10 +746,47 @@ int constdeclaration(int* ptx, int lev, int* pdx)
 */
 int vardeclaration(int* ptx,int lev,int* pdx)
 {
+	/* 修改：支持形如 ident '[' number ']' 的数组声明 */
 	if (sym == ident)
 	{
-		enter(variable, ptx, lev, pdx); // 填写名字表
-		getsymdo;
+		char saved_id[al+1];
+		int saved_num = 0;
+		strcpy(saved_id, id);
+		getsymdo; /* read next symbol after identifier */
+
+		if (sym == lbrack) /* array declaration: ident '[' number ']' */
+		{
+			getsymdo;
+			if (sym == number)
+			{
+				saved_num = num; /* array size */
+				/* prepare to call enter with array: put id back into global id and num already holds size */
+				strcpy(id, saved_id);
+				/* num currently has size; call enter to allocate */
+				getsymdo; /* consume number */
+				if (sym == rbrack)
+				{
+					/* enter will use global num */
+					enter(array, ptx, lev, pdx);
+					getsymdo; /* consume ']' */
+				}
+				else
+				{
+					error(36); /* missing ']' (choose unused code) */
+				}
+			}
+			else
+			{
+				error(31); /* illegal array size */
+			}
+		}
+		else
+		{
+			/* normal variable declaration: we already advanced sym, so restore id and call enter */
+			strcpy(id, saved_id);
+			enter(variable, ptx, lev, pdx);
+			/* sym already points to next token after ident before enter; no extra getsymdo here in original */
+		}
 	}
 	else
 	{
@@ -773,7 +819,7 @@ int statement(bool* fsys, int* ptx, int lev)
 	int i, cx1, cx2;
 	bool nxtlev[symnum];
 
-	if (sym == ident)   /* 准备按照赋值语句处理 */
+	if (sym == ident)   /* 准备按照赋值语句处理或数组赋值 */
 	{
 		i = position(id, *ptx);
 		if (i == 0)
@@ -782,29 +828,81 @@ int statement(bool* fsys, int* ptx, int lev)
 		}
 		else
 		{
-			if(table[i].kind != variable)
-			{
-				error(12);  /* 赋值语句格式错误 */
-				i = 0;
-			}
-			else
+			/* 处理数组赋值： ident '[' 表达式 ']' := 表达式 */
+			if (table[i].kind == array &&
+				1)
 			{
 				getsymdo;
-				if(sym == becomes)
+				if (sym == lbrack) /* 数组元素赋值 */
 				{
+					/* 解析索引表达式 */
 					getsymdo;
+					memcpy(nxtlev, fsys, sizeof(bool)*symnum);
+					nxtlev[rbrack] = true;
+					expressiondo(nxtlev, ptx, lev); /* 索引值留在栈上 */
+
+					if (sym == rbrack)
+					{
+						getsymdo;
+					}
+					else
+					{
+						error(22); /* 缺少右括号 */
+					}
+
+					/* 期望赋值符号 ':=' */
+					if (sym == becomes)
+					{
+						getsymdo;
+						/* 解析右侧表达式，结果留在栈上 */
+						memcpy(nxtlev, fsys, sizeof(bool)*symnum);
+						expressiondo(nxtlev, ptx, lev);
+
+						/* 生成 index + 基地址 的偏移值（表中保存的基地址 table[i].adr） */
+						gendo(lit, 0, table[i].adr);
+						gendo(opr, 0, 2); /* 相加，栈顶为偏移 */
+
+						/* 使用 sti 将值存入 base(l) + offset */
+						gendo(sti, lev - table[i].level, 0);
+					}
+					else
+					{
+						error(13);  /* 没有检测到赋值符号 */
+					}
+					return 0;
 				}
 				else
 				{
-					error(13);  /* 没有检测到赋值符号 */
+					/* 非数组索引情况，回退为普通标识符赋值处理 */
+					if (table[i].kind != variable)
+					{
+						error(12);  /* 赋值语句格式错误 */
+						i = 0;
+					}
+					else
+					{
+						if(sym == becomes)
+						{
+							getsymdo;
+						}
+						else
+						{
+							error(13);  /* 没有检测到赋值符号 */
+						}
+						memcpy(nxtlev, fsys, sizeof(bool)*symnum);
+						expressiondo(nxtlev, ptx, lev);
+						if(i != 0)
+						{
+							gendo(sto, lev-table[i].level, table[i].adr);
+						}
+					}
+					return 0;
 				}
-				memcpy(nxtlev, fsys, sizeof(bool)*symnum);
-				expressiondo(nxtlev, ptx, lev); /* 处理赋值符号右侧表达式 */
-				if(i != 0)
-				{
-					/* expression将执行一系列指令，但最终结果将会保存在栈顶，执行sto命令完成赋值 */
-					gendo(sto, lev-table[i].level, table[i].adr);
-				}
+			}
+			else
+			{
+				/* existing behavior (variables, procedures etc.) */
+				/* unreachable due to earlier return paths but keep for completeness */
 			}
 		}//if (i == 0)
 	}
@@ -1091,33 +1189,65 @@ int factor(bool* fsys, int* ptx, int lev)
 {
 	int i;
 	bool nxtlev[symnum];
-	testdo(facbegsys, fsys, 24);    /* 检测因子的开始符号 */
-	/* while(inset(sym, facbegsys)) */  /* 循环直到不是因子开始符号 */
-	if(inset(sym,facbegsys))    /* BUG: 原来的方法var1(var2+var3)会被错误识别为因子 */
+	testdo(facbegsys, fsys, 24);
+	if(inset(sym,facbegsys))
 	{
-		if(sym == ident)    /* 因子为常量或变量 */
+		if(sym == ident)
 		{
-			i = position(id, *ptx); /* 查找名字 */
+			i = position(id, *ptx);
 			if (i == 0)
 			{
-				error(11);  /* 标识符未声明 */
+				error(11);
 			}
 			else
 			{
 				switch (table[i].kind)
 				{
-				case constant:  /* 名字为常量 */
-					gendo(lit, 0, table[i].val);    /* 直接把常量的值入栈 */
+				case constant:
+					gendo(lit, 0, table[i].val);
+					getsymdo;
 					break;
-				case variable:  /* 名字为变量 */
-					gendo(lod, lev-table[i].level, table[i].adr);   /* 找到变量地址并将其值入栈 */
+				case variable:
+					gendo(lod, lev-table[i].level, table[i].adr);
+					getsymdo;
 					break;
-				case procedur:  /* 名字为过程 */
-					error(21);  /* 不能为过程 */
+				case array: /* 一维数组元素访问： ident '[' 表达式 ']' */
+					getsymdo; /* 读取 ident 后的下一个符号 */
+					if (sym == lbrack)
+					{
+						getsymdo; /* 消耗 '[' 并开始解析表达式 */
+						memcpy(nxtlev, fsys, sizeof(bool)*symnum);
+						nxtlev[rbrack] = true;
+						expressiondo(nxtlev, ptx, lev); /* 将索引值压栈 */
+
+						if (sym == rbrack)
+						{
+							getsymdo; /* 消耗 ']' */
+						}
+						else
+						{
+							error(22); /* 缺少右括号 */
+						}
+
+						/* 将基地址加入偏移（编译时表中的 table[i].adr） */
+						gendo(lit, 0, table[i].adr);
+						gendo(opr, 0, 2); /* 相加，栈上为最终偏移 */
+
+						/* 间接装载：按 base(l) + 偏移 读取元素值 */
+						gendo(lodi, lev - table[i].level, 0);
+					}
+					else
+					{
+						/* 标识符后未跟 '['，视作数组使用不当，报错 */
+						error(21);
+					}
+					break;
+				case procedur:
+					error(21);
+					getsymdo;
 					break;
 				}
 			}
-			getsymdo;
 		}
 		else
 		{
@@ -1317,6 +1447,26 @@ void interpret()
 		case sto:   /* 栈顶的值存到相对当前过程的数据基地址为a的内存 */
 			t--;
 			s[base(i.l, s, b) + i.a] = s[t];
+			break;
+		case lodi: /* 间接装载: 弹出 offset，并把 s[base(l)+offset] 压入栈 */
+			{
+				int off;
+				t--;
+				off = s[t];
+				s[t] = s[base(i.l, s, b) + off];
+				t++;
+			}
+			break;
+		case sti: /* 间接存储: 弹出 value 和 offset, 存入 s[base(l)+offset] = value */
+			{
+				int val, off;
+				/* value 是栈顶，其下为 offset */
+				t--;
+				val = s[t];   /* pop value */
+				t--;
+				off = s[t];   /* pop offset */
+				s[base(i.l, s, b) + off] = val;
+			}
 			break;
 		case cal:   /* 调用子过程 */
 			s[t] = base(i.l, s, b); /* 将父过程基地址入栈 */

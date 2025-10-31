@@ -12,15 +12,15 @@ typedef enum {
 } bool;
 
 
-#define norw 13     /* 关键字个数 */
-#define txmax 100   /* 名字表容量 */
-#define nmax 14     /* number的最大位数 */
-#define al 10       /* 符号的最大长度 */
-#define amax 2047   /* 地址上界*/
-#define levmax 3    /* 最大允许过程嵌套声明层数 [0,  levmax]*/
-#define cxmax 500   /* 最多的虚拟机代码数 */
+#define norw 13     /* 锟截硷拷锟街革拷锟斤拷 */
+#define txmax 100   /* 锟斤拷锟街憋拷锟斤拷锟斤拷锟斤拷 */
+#define nmax 14     /* number锟斤拷锟斤拷锟轿伙拷锟? */
+#define al 10       /* 锟斤拷锟脚碉拷锟斤拷蟪ざ锟? */
+#define amax 2047   /* 锟斤拷址锟较斤拷*/
+#define levmax 3    /* 锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟角讹拷锟斤拷锟斤拷锟斤拷锟斤拷锟? [0,  levmax]*/
+#define cxmax 500   /* 锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟? */
 
-/* 符号 */
+/* 锟斤拷锟斤拷 */
 enum symbol {
     nul,         ident,     number,     plus,      minus,
     times,       slash,     oddsym,     eql,       neq,
@@ -29,75 +29,77 @@ enum symbol {
     beginsym,    endsym,    ifsym,      thensym,   whilesym,
     writesym,    readsym,   dosym,      callsym,   constsym,
     varsym,      procsym,
+    lbrack,      rbrack    // 为数组语法添加 '[' 和 ']'
 };
-#define symnum 32
+#define symnum 34  // 增加以包含 lbrack 和 rbrack
 
-/* 名字表中的类型 */
+/* 锟斤拷锟街憋拷锟叫碉拷锟斤拷锟斤拷 */
 enum object {
     constant,
     variable,
     procedur,
-    array       //add
+    array       // 新增：一维数组
 };
 
-/* 虚拟机代码 */
+/* 锟斤拷锟斤拷锟斤拷锟斤拷锟? */
 enum fct {
     lit,     opr,     lod,
     sto,     cal,     inte,
     jmp,     jpc,
+    lodi,    sti      // 新增：数组的间接装载/存储指令
 };
-#define fctnum 8
+#define fctnum 10  // 因 lodi 和 sti 而增加
 
-/* 虚拟机代码结构 */
+/* 锟斤拷锟斤拷锟斤拷锟斤拷锟结构 */
 struct instruction
 {
-    enum fct f; /* 虚拟机代码指令 */
-    int l;      /* 引用层与声明层的层次差 */
-    int a;      /* 根据f的不同而不同 */
+    enum fct f; /* 锟斤拷锟斤拷锟斤拷锟斤拷锟街革拷锟? */
+    int l;      /* 锟斤拷锟矫诧拷锟斤拷锟斤拷锟斤拷锟斤拷牟锟轿诧拷 */
+    int a;      /* 锟斤拷锟斤拷f锟侥诧拷同锟斤拷锟斤拷同 */
 };
 
-FILE* fas;  /* 输出名字表 */
-FILE* fa;   /* 输出虚拟机代码 */
-FILE* fa1;  /* 输出源文件及其各行对应的首地址 */
-FILE* fa2;  /* 输出结果 */
-bool listswitch;    /* 显示虚拟机代码与否 */
-bool tableswitch;   /* 显示名字表与否 */
-char ch;            /* 获取字符的缓冲区，getch 使用 */
-enum symbol sym;    /* 当前的符号 */
-char id[al+1];      /* 当前ident, 多出的一个字节用于存放0 */
-int num;            /* 当前number */
-int cc, ll;          /* getch使用的计数器，cc表示当前字符(ch)的位置 */
-int cx;             /* 虚拟机代码指针, 取值范围[0, cxmax-1]*/
-char line[81];      /* 读取行缓冲区 */
-char a[al+1];       /* 临时符号, 多出的一个字节用于存放0 */
-struct instruction code[cxmax]; /* 存放虚拟机代码的数组 */
-char word[norw][al];        /* 保留字 */
-enum symbol wsym[norw];     /* 保留字对应的符号值 */
-enum symbol ssym[256];      /* 单字符的符号值 */
-char mnemonic[fctnum][5];   /* 虚拟机代码指令名称 */
-bool declbegsys[symnum];    /* 表示声明开始的符号集合 */
-bool statbegsys[symnum];    /* 表示语句开始的符号集合 */
-bool facbegsys[symnum];     /* 表示因子开始的符号集合 */
+FILE* fas;  /* 锟斤拷锟斤拷锟斤拷直锟? */
+FILE* fa;   /* 锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷 */
+FILE* fa1;  /* 锟斤拷锟皆达拷募锟斤拷锟斤拷锟斤拷锟叫讹拷应锟斤拷锟阶碉拷址 */
+FILE* fa2;  /* 锟斤拷锟斤拷锟斤拷 */
+bool listswitch;    /* 锟斤拷示锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷 */
+bool tableswitch;   /* 锟斤拷示锟斤拷锟街憋拷锟斤拷锟? */
+char ch;            /* 锟斤拷取锟街凤拷锟侥伙拷锟斤拷锟斤拷锟斤拷getch 使锟斤拷 */
+enum symbol sym;    /* 锟斤拷前锟侥凤拷锟斤拷 */
+char id[al+1];      /* 锟斤拷前ident, 锟斤拷锟斤拷锟揭伙拷锟斤拷纸锟斤拷锟斤拷诖锟斤拷0 */
+int num;            /* 锟斤拷前number */
+int cc, ll;          /* getch使锟矫的硷拷锟斤拷锟斤拷锟斤拷cc锟斤拷示锟斤拷前锟街凤拷(ch)锟斤拷位锟斤拷 */
+int cx;             /* 锟斤拷锟斤拷锟斤拷锟斤拷锟街革拷锟?, 取值锟斤拷围[0, cxmax-1]*/
+char line[81];      /* 锟斤拷取锟叫伙拷锟斤拷锟斤拷 */
+char a[al+1];       /* 锟斤拷时锟斤拷锟斤拷, 锟斤拷锟斤拷锟揭伙拷锟斤拷纸锟斤拷锟斤拷诖锟斤拷0 */
+struct instruction code[cxmax]; /* 锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟? */
+char word[norw][al];        /* 锟斤拷锟斤拷锟斤拷 */
+enum symbol wsym[norw];     /* 锟斤拷锟斤拷锟街讹拷应锟侥凤拷锟斤拷值 */
+enum symbol ssym[256];      /* 锟斤拷锟街凤拷锟侥凤拷锟斤拷值 */
+char mnemonic[fctnum][5];   /* 锟斤拷锟斤拷锟斤拷锟斤拷锟街革拷锟斤拷锟斤拷锟? */
+bool declbegsys[symnum];    /* 锟斤拷示锟斤拷锟斤拷锟斤拷始锟侥凤拷锟脚硷拷锟斤拷 */
+bool statbegsys[symnum];    /* 锟斤拷示锟斤拷淇硷拷姆锟斤拷偶锟斤拷锟? */
+bool facbegsys[symnum];     /* 锟斤拷示锟斤拷锟接匡拷始锟侥凤拷锟脚硷拷锟斤拷 */
 
-/* 名字表结构 */
+/* 锟斤拷锟街憋拷锟结构 */
 struct tablestruct
 {
-    char name[al];      /* 名字 */
-    enum object kind;   /* 类型：const, var, array or procedure */
-    int val;            /* 数值，仅const使用 */
-    int level;          /* 所处层，仅const不使用 */
-    int adr;            /* 地址，仅const不使用 */
-    int size;           /* 需要分配的数据区空间, 仅procedure使用 */
+    char name[al];      /* 锟斤拷锟斤拷 */
+    enum object kind;   /* 锟斤拷锟酵ｏ拷const, var, array or procedure */
+    int val;            /* 锟斤拷值锟斤拷锟斤拷const使锟斤拷 */
+    int level;          /* 锟斤拷锟斤拷锟姐，锟斤拷const锟斤拷使锟斤拷 */
+    int adr;            /* 锟斤拷址锟斤拷锟斤拷const锟斤拷使锟斤拷 */
+    int size;           /* 锟斤拷要锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷占锟?, 锟斤拷procedure使锟斤拷 */
 };
 
-struct tablestruct table[txmax]; /* 名字表 */
+struct tablestruct table[txmax]; /* 锟斤拷锟街憋拷 */
 
 FILE* fin;
 FILE* fout;
 char fname[al];
-int err; /* 错误计数器 */
+int err; /* 锟斤拷锟斤拷锟斤拷锟斤拷锟? */
 
-/* 当函数中会发生fatal error时，返回-1告知调用它的函数，最终退出程序 */
+/* 锟斤拷锟斤拷锟斤拷锟叫会发锟斤拷fatal error时锟斤拷锟斤拷锟斤拷-1锟斤拷知锟斤拷锟斤拷锟斤拷锟侥猴拷锟斤拷锟斤拷锟斤拷锟斤拷锟剿筹拷锟斤拷锟斤拷 */
 #define getsymdo                      if(-1 == getsym()) return -1
 #define getchdo                       if(-1 == getch()) return -1
 #define testdo(a, b, c)               if(-1 == test(a, b, c)) return -1

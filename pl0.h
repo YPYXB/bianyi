@@ -12,7 +12,7 @@ typedef enum {
 } bool;
 
 
-#define norw 13     /* 保留字个数 */
+#define norw 14     /* 保留字个数（增加 else） */
 #define txmax 100   /* 符号表最大长度 */
 #define nmax 14     /* 数字的最大位数 */
 #define al 10       /* 标识符最大长度 */
@@ -28,10 +28,11 @@ enum symbol {
     rparen,      comma,     semicolon,  period,    becomes,
     beginsym,    endsym,    ifsym,      thensym,   whilesym,
     writesym,    readsym,   dosym,      callsym,   constsym,
-    varsym,      procsym,
-    lbrack,      rbrack    // 为数组语法添加 '[' 和 ']'
+    varsym,      procsym,   elsesym,   /* 新增 else 符号 */
+    lbrack,      rbrack,    /* 数组语法 '[' 和 ']' */
+    plusplus,    minusminus /* 新增 ++ 和 -- 符号 */
 };
-#define symnum 34  // 增加以包含 lbrack 和 rbrack
+#define symnum 37  // 增加以包含 elsesym
 
 /* 标识符种类 */
 enum object {

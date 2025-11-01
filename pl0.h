@@ -50,10 +50,10 @@ enum object {
 enum fct {
     lit,     opr,     lod,
     sto,     cal,     inte,
-    jmp,     jpc,
-    lodi,    sti      // 新增：数组的间接装载/存储指令
+    jmp,     jpc,     lodi,    
+    sti,     dup     // 新增 dup 指令
 };
-#define fctnum 10  // 因 lodi 和 sti 而增加
+#define fctnum 11  // 增加到11以包含dup指令
 
 /* 指令结构 */
 struct instruction

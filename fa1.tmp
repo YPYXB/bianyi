@@ -1,0 +1,57 @@
+Input pl/0 file?   nn
+1 var
+2     a[5], i, sum, x, y, z, t;
+3 
+4 begin
+5 
+6     i := 0;
+7     while i <= 4 do
+8     begin
+9         a[i] := i * i;
+10         i := i + 1;
+11     end;
+12 
+13 
+14     sum := 0;
+15     i := 0;
+16     while i <= 4 do
+17     begin
+18         sum := sum + a[i];
+19         i := i + 1;
+20     end;
+21     write(sum);      
+22 
+23 
+24     x := 5;
+25     ++x;            
+26     write(x);       
+27     x++;            
+28     write(x);       
+29     --x;            
+30     write(x);       
+31     x--;            
+32     write(x);       
+33 
+34 
+35     x := 10;
+36     x += 5;         
+37     write(x);       
+38     x -= 3;         
+39     write(x);       
+40     x *= 2;         
+41     write(x);       
+42     x /= 6;         
+43     write(x);       
+44 
+45 
+46     y := 0;
+47     if !y = 1 then write(1) else write(0);  
+48     y := 2;
+49     if !y = 0 then write(1) else write(0);  
+50 
+51 
+52     z := 7 % 4;     
+53     write(z);       
+54     t := 2 ^ 10;    
+55     write(t);       
+56 end.

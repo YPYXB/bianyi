@@ -1,0 +1,56 @@
+var
+    a[5], i, sum, x, y, z, t;
+
+begin
+    { fill array }
+    i := 0;
+    while i <= 4 do
+    begin
+        a[i] := i * i;
+        i := i + 1;
+    end;
+
+    { sum array }
+    sum := 0;
+    i := 0;
+    while i <= 4 do
+    begin
+        sum := sum + a[i];
+        i := i + 1;
+    end;
+    write(sum);      { should print 30 }
+
+    { ++ and -- }
+    x := 5;
+    ++x;            { x becomes 6 }
+    write(x);       { prints 6 }
+    x++;            { x becomes 7 }
+    write(x);       { prints 7 }
+    --x;            { x becomes 6 }
+    write(x);       { prints 6 }
+    x--;            { x becomes 5 }
+    write(x);       { prints 5 }
+
+    { compound assignments }
+    x := 10;
+    x += 5;         { x becomes 15 }
+    write(x);       { prints 15 }
+    x -= 3;         { x becomes 12 }
+    write(x);       { prints 12 }
+    x *= 2;         { x becomes 24 }
+    write(x);       { prints 24 }
+    x /= 6;         { x becomes 4 }
+    write(x);       { prints 4 }
+
+    { logical not and else }
+    y := 0;
+    if !y = 1 then write(1) else write(0);  { prints 1 }
+    y := 2;
+    if !y = 0 then write(1) else write(0);  { prints 1 }
+
+    { modulus and power }
+    z := 7 % 4;     { z becomes 3 }
+    write(z);       { prints 3 }
+    t := 2 ^ 10;    { t becomes 1024 }
+    write(t);       { prints 1024 }
+end.

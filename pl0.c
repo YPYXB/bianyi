@@ -283,6 +283,22 @@ int getch()
 				line[ll] = 0;
 				break;
 			}
+
+			/* 新增：以 '\' 开始的注释，跳过至行尾（不存入 line，也不输出到 fa1） */
+			if (ch == '\\')
+			{
+				/* 跳过注释直到换行或 EOF */
+				while (ch != 10)
+				{
+					if (EOF == fscanf(fin, "%c", &ch))
+					{
+						break;
+					}
+				}
+				/* 已到行尾，结束当前行读取循环 */
+				break;
+			}
+
 			printf("%c", ch);
 			fprintf(fa1, "%c", ch);
 			line[ll] = ch;

@@ -74,6 +74,7 @@ enum symbol sym;    /* 当前符号 */
 char id[al+1];      /* 当前标识符，末尾有 '\0' */
 int num;            /* 当前数字值 */
 int cc, ll;         /* getch 使用的计数：cc 表示当前字符位置 */
+int linenum;        /* 当前行号 */
 int cx;             /* 代码生成位置，取值范围 [0, cxmax-1] */
 char line[81];      /* 当前行缓冲区 */
 char a[al+1];       /* 暂存标识符字符，末尾有 '\0' */

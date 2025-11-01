@@ -31,9 +31,11 @@ enum symbol {
     varsym,      procsym,   elsesym,   /* 新增 else 符号 */
     lbrack,      rbrack,    /* 数组语法 '[' 和 ']' */
     plusplus,    minusminus, /* 新增 ++ 和 -- 符号 */
-    plusequal,   minusequal, timesequal, slashequal /* 新增 +=, -=, *=, /= 符号 */
+    plusequal,   minusequal, timesequal, slashequal, /* 新增 +=, -=, *=, /= 符号 */
+    modsym,      /* 新增求余符号 % */
+    notsym       /* 新增逻辑非符号 ! */
 };
-#define symnum 41  // 增加以包含四个复合赋值符号
+#define symnum 43  // 增加以包含逻辑非符号
 
 /* 标识符种类 */
 enum object {

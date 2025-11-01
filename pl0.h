@@ -33,9 +33,10 @@ enum symbol {
     plusplus,    minusminus, /* 新增 ++ 和 -- 符号 */
     plusequal,   minusequal, timesequal, slashequal, /* 新增 +=, -=, *=, /= 符号 */
     modsym,      /* 新增求余符号 % */
-    notsym       /* 新增逻辑非符号 ! */
+    notsym,      /* 新增逻辑非符号 ! */
+    powsym       /* 新增幂运算符号 ^ */
 };
-#define symnum 43  // 增加以包含逻辑非符号
+#define symnum 44  // 增加以包含幂运算符号
 
 /* 标识符种类 */
 enum object {
@@ -110,6 +111,7 @@ int err; /* 错误码 */
 #define expressiondo(a, b, c)         if(-1 == expression(a, b, c)) return -1
 #define factordo(a, b, c)             if(-1 == factor(a, b, c)) return -1
 #define termdo(a, b, c)               if(-1 == term(a, b, c)) return -1
+#define power_expressiondo(a, b, c)   if(-1 == power_expression(a, b, c)) return -1
 #define conditiondo(a, b, c)          if(-1 == condition(a, b, c)) return -1
 #define statementdo(a, b, c)          if(-1 == statement(a, b, c)) return -1
 #define constdeclarationdo(a, b, c)   if(-1 == constdeclaration(a, b, c)) return -1
@@ -129,6 +131,7 @@ int block(int lev, int tx, bool* fsys);
 void interpret();
 int factor(bool* fsys, int* ptx, int lev);
 int term(bool* fsys, int* ptx, int lev);
+int power_expression(bool* fsys, int* ptx, int lev);
 int condition(bool* fsys, int* ptx, int lev);
 int expression(bool* fsys, int* ptx, int lev);
 int statement(bool* fsys, int* ptx, int lev);

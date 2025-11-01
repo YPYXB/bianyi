@@ -117,7 +117,8 @@ void init()
 	ssym['*'] = times;
 	ssym['/'] = slash;
 	ssym['%'] = modsym;
-	ssym['!'] = notsym;    /* 新增：'!' 符号 */
+	ssym['!'] = notsym;
+	ssym['^'] = powsym;    /* 新增：'^' 符号 */
 	ssym['('] = lparen;
 	ssym[')'] = rparen;
 	ssym['='] = eql;
@@ -200,7 +201,8 @@ void init()
 	facbegsys[ident] = true;
 	facbegsys[number] = true;
 	facbegsys[lparen] = true;
-	facbegsys[notsym] = true; /* '!' can be the start of a factor */
+	facbegsys[notsym] = true;
+	facbegsys[powsym] = false; // ^ is not a prefix operator
 }
 
 /*
@@ -306,7 +308,7 @@ int getsym()
 		getchdo;
 	}
 	if (ch>='a' && ch<='z')
-	{
+	{           /* 名字或保留字以a..z开头 */
 		k = 0;
 		do {
 			if(k<al)
@@ -315,7 +317,7 @@ int getsym()
 				k++;
 			}
 			getchdo;
-		} while (ch>='a' && ch<='z' || ch>='0' && ch<='9');
+		} while (ch>='a' && ch<='z' || ch>='0' && ch<='9' || ch == '_');
 		a[k] = 0;
 		strcpy(id, a);
 		i = 0;
@@ -1258,12 +1260,12 @@ int term(bool* fsys, int* ptx, int lev)
 	nxtlev[times] = true;
 	nxtlev[slash] = true;
 	nxtlev[modsym] = true;
-	factordo(nxtlev, ptx, lev);
+	power_expressiondo(nxtlev, ptx, lev);
 	while(sym==times || sym==slash || sym==modsym)
 	{
 		mulop = sym;
-		getsymdo;
-		factordo(nxtlev, ptx, lev);
+		getchdo;
+		power_expressiondo(nxtlev, ptx, lev);
 		if(mulop == times)
 		{
 			gendo(opr, 0, 4);
@@ -1276,6 +1278,24 @@ int term(bool* fsys, int* ptx, int lev)
 		{
 			gendo(opr, 0, 7);
 		}
+	}
+	return 0;
+}
+
+/*
+* 幂运算处理 (右结合)
+*/
+int power_expression(bool* fsys, int* ptx, int lev)
+{
+	bool nxtlev[symnum];
+	memcpy(nxtlev, fsys, sizeof(bool)*symnum);
+	nxtlev[powsym] = true;
+	factordo(nxtlev, ptx, lev);
+	if (sym == powsym)
+	{
+		getchdo;
+		power_expressiondo(nxtlev, ptx, lev);
+		gendo(opr, 0, 18); /* 生成幂运算指令 */
 	}
 	return 0;
 }
@@ -1542,6 +1562,22 @@ void interpret()
 				break;
 			case 17:
 				s[t-1] = !s[t-1];
+				break;
+			case 18: /* 幂运算 */
+				{
+					int exponent = s[t-1];
+					int base_val = s[t-2];
+					int result = 1;
+					if (exponent < 0) { // 不支持负指数
+						result = 0;
+					} else {
+						for (int k = 0; k < exponent; k++) {
+							result *= base_val;
+						}
+					}
+					s[t-2] = result;
+					t--;
+				}
 				break;
 			}
 			break;

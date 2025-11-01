@@ -673,12 +673,12 @@ void enter(enum object k, int* ptx, int lev, int* pdx)
 	case array:     /* 一维数组声明：num 作为数组大小 */
 		if (num <= 0)
 		{
-			error(31); /* 使用31作为越界或非法大小提示 */
+			error(31); /* 非法数组大小 */
 			num = 1;
 		}
 		table[(*ptx)].level = lev;
-		table[(*ptx)].adr = (*pdx);
-		table[(*ptx)].size = num;
+		table[(*ptx)].adr = (*pdx); /* 记录数组基址（相对地址） */
+		table[(*ptx)].size = num;   /* 记录数组长度 */
 		(*pdx) += num; /* 为数组分配连续的 num 个单元 */
 		break;
 	}
@@ -749,47 +749,43 @@ int vardeclaration(int* ptx,int lev,int* pdx)
 	if (sym == ident)
 	{
 		char saved_id[al+1];
-		int saved_num = 0;
 		strcpy(saved_id, id);
-		getsymdo; /* read next symbol after identifier */
+		getsymdo; /* 读取标识符后的下一个符号 */
 
 		if (sym == lbrack) /* array declaration: ident '[' number ']' */
 		{
 			getsymdo;
 			if (sym == number)
 			{
-				saved_num = num; /* array size */
-				/* prepare to call enter with array: put id back into global id and num already holds size */
+				/* 把标识名恢复到全局 id，num 保持为数组大小，以供 enter 使用 */
 				strcpy(id, saved_id);
-				/* num currently has size; call enter to allocate */
-				getchdo; /* consume number */
+				/* 调用 enter(array, ...) 使用当前全局 num 作为数组长度 */
+				enter(array, ptx, lev, pdx);
+				getsymdo; /* 消耗 number 后的符号（原代码逻辑） */
 				if (sym == rbrack)
 				{
-					/* enter will use global num */
-					enter(array, ptx, lev, pdx);
-					getsymdo; /* consume ']' */
+					getsymdo; /* 消耗 ']' */
 				}
 				else
 				{
-					error(36); /* missing ']' (choose unused code) */
+					error(36); /* 缺少 ']' */
 				}
 			}
 			else
 			{
-				error(31); /* illegal array size */
+				error(31); /* 非法数组大小 */
 			}
 		}
 		else
 		{
-			/* normal variable declaration: we already advanced sym, so restore id and call enter */
+			/* 普通变量声明 */
 			strcpy(id, saved_id);
 			enter(variable, ptx, lev, pdx);
-			/* sym already points to next token after ident before enter; no extra getsymdo here in original */
 		}
 	}
 	else
 	{
-		error(4);   /* var后应是标识 */
+		error(4);   /* var 后应是标识符 */
 	}
 	return 0;
 }
@@ -828,82 +824,57 @@ int statement(bool* fsys, int* ptx, int lev)
 		else
 		{
 			/* 处理数组赋值： ident '[' 表达式 ']' := 表达式 */
-			if (table[i].kind == array &&
-				1)
+			if (table[i].kind == array)
 			{
 				getsymdo;
 				if (sym == lbrack) /* 数组元素赋值 */
 				{
-					/* 解析索引表达式 */
 					getsymdo;
 					memcpy(nxtlev, fsys, sizeof(bool)*symnum);
 					nxtlev[rbrack] = true;
-					expressiondo(nxtlev, ptx, lev); /* 索引值留在栈上 */
+					expressiondo(nxtlev, ptx, lev); /* 生成索引，索引留栈顶 */
 
-					if (sym == rbrack)
-					{
-						getsymdo;
-					}
-					else
-					{
-						error(22); /* 缺少右括号 */
-					}
+					if (sym == rbrack) { getsymdo; } else { error(22); }
 
-					/* 期望赋值符号 ':=' */
 					if (sym == becomes)
 					{
 						getsymdo;
-						/* 解析右侧表达式，结果留在栈上 */
 						memcpy(nxtlev, fsys, sizeof(bool)*symnum);
-						expressiondo(nxtlev, ptx, lev);
+						expressiondo(nxtlev, ptx, lev); /* 生成右侧表达式，值留栈顶 */
 
-						/* 生成 index + 基地址 的偏移值（表中保存的基地址 table[i].adr） */
+						/* 将数组基址加入偏移： push baseAdr; add */
 						gendo(lit, 0, table[i].adr);
-						gendo(opr, 0, 2); /* 相加，栈顶为偏移 */
+						gendo(opr, 0, 2); /* add */
 
 						/* 使用 sti 将值存入 base(l) + offset */
 						gendo(sti, lev - table[i].level, 0);
 					}
 					else
 					{
-						error(13);  /* 没有检测到赋值符号 */
-					}
-					return 0;
-				}
-				else
-				{
-					/* 非数组索引情况，回退为普通标识符赋值处理 */
-					if (table[i].kind != variable)
-					{
-						error(12);  /* 赋值语句格式错误 */
-						i = 0;
-					}
-					else
-					{
-						if(sym == becomes)
-						{
-							getsymdo;
-						}
-						else
-						{
-							error(13);  /* 没有检测到赋值符号 */
-						}
-						memcpy(nxtlev, fsys, sizeof(bool)*symnum);
-						expressiondo(nxtlev, ptx, lev);
-						if(i != 0)
-						{
-							gendo(sto, lev-table[i].level, table[i].adr);
-						}
+						error(13);
 					}
 					return 0;
 				}
 			}
 			else
 			{
-				/* existing behavior (variables, procedures etc.) */
-				/* unreachable due to earlier return paths but keep for completeness */
+				if(sym == becomes)
+				{
+					getsymdo;
+				}
+				else
+				{
+					error(13);  /* 没有检测到赋值符号 */
+				}
+				memcpy(nxtlev, fsys, sizeof(bool)*symnum);
+				expressiondo(nxtlev, ptx, lev);
+				if(i != 0)
+				{
+					gendo(sto, lev-table[i].level, table[i].adr);
+				}
 			}
-		}//if (i == 0)
+			return 0;
+		}
 	}
 	else
 	{
@@ -1219,25 +1190,17 @@ int factor(bool* fsys, int* ptx, int lev)
 						nxtlev[rbrack] = true;
 						expressiondo(nxtlev, ptx, lev); /* 将索引值压栈 */
 
-						if (sym == rbrack)
-						{
-							getsymdo; /* 消耗 ']' */
-						}
-						else
-						{
-							error(22); /* 缺少右括号 */
-						}
+						if (sym == rbrack) { getsymdo; } else { error(22); }
 
 						/* 将基地址加入偏移（编译时表中的 table[i].adr） */
 						gendo(lit, 0, table[i].adr);
-						gendo(opr, 0, 2); /* 相加，栈上为最终偏移 */
+						gendo(opr, 0, 2); /* add */
 
 						/* 间接装载：按 base(l) + 偏移 读取元素值 */
 						gendo(lodi, lev - table[i].level, 0);
 					}
 					else
 					{
-						/* 标识符后未跟 '['，视作数组使用不当，报错 */
 						error(21);
 					}
 					break;
@@ -1459,7 +1422,6 @@ void interpret()
 		case sti: /* 间接存储: 弹出 value 和 offset, 存入 s[base(l)+offset] = value */
 			{
 				int val, off;
-				/* value 是栈顶，其下为 offset */
 				t--;
 				val = s[t];   /* pop value */
 				t--;

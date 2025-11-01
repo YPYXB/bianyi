@@ -1,17 +1,17 @@
 /*
- * PL/0 complier program for win32 platform (implemented in C)
+ * PL/0 编译程序（在 Win32 平台上用 C 实现）
  *
- * The program has been test on Visual C++ 6.0, Visual C++.NET and
- * Visual C++.NET 2003, on Win98, WinNT, Win2000, WinXP and Win2003
+ * 本程序在 Visual C++ 6.0、Visual C++.NET 以及 Visual C++.NET 2003
+ * 在 Win98、WinNT、Win2000、WinXP 和 Win2003 上测试通过。
  *
  * 使用方法：
- * 运行后输入PL/0源程序文件?
+ * 运行后输入 PL/0 源程序文件名
  * 回答是否输出虚拟机代码
  * 回答是否输出名字表
- * fa.tmp输出虚拟机代码
- * fa1.tmp输出源文件及其各行对应的首地址
- * fa2.tmp输出结?
- * fas.tmp输出名字表
+ * fa.tmp 输出虚拟机代码
+ * fa1.tmp 输出源文件及其各行对应的首地址
+ * fa2.tmp 输出解释执行的结果
+ * fas.tmp 输出名字表
  */
 
 #include <stdio.h>
@@ -470,11 +470,11 @@ int test(bool* s1, bool* s2, int n)
 }
 
 /*
-* 编译程序主?
+* 编译程序主函数
 *
 * lev:    当前分程序所在层
 * tx:     名字表当前尾指针
-* fsys:   当前模块后跟符号集?
+* fsys:   当前模块的后跟符号集合
 */
 int block(int lev, int tx, bool* fsys)
 {
@@ -483,8 +483,7 @@ int block(int lev, int tx, bool* fsys)
 	int dx;                 /* 名字分配到的相对地址 */
 	int tx0;                /* 保留初始tx */
 	int cx0;                /* 保留初始cx */
-	bool nxtlev[symnum];    /* 在下级函数的参数中，符号集合均为值参，但由于使用数组实现，开辟新的空?
-							传递给下级函数*/
+	bool nxtlev[symnum];    /* 由于符号集合使用数组实现，传参时会传指针；为避免下级函数修改上级集合，复制一份传递给下级 */
 
 	dx = 3;
 	tx0 = tx;               /* 记录本层名字的初始位置 */
@@ -763,7 +762,7 @@ int vardeclaration(int* ptx,int lev,int* pdx)
 				/* prepare to call enter with array: put id back into global id and num already holds size */
 				strcpy(id, saved_id);
 				/* num currently has size; call enter to allocate */
-				getsymdo; /* consume number */
+				getchdo; /* consume number */
 				if (sym == rbrack)
 				{
 					/* enter will use global num */
@@ -1168,7 +1167,7 @@ int term(bool* fsys, int* ptx, int lev)
 	while(sym==times || sym==slash)
 	{
 		mulop = sym;
-		getsymdo;
+		getchdo;
 		factordo(nxtlev, ptx, lev);
 		if(mulop == times)
 		{
@@ -1492,7 +1491,7 @@ void interpret()
 	} while (p != 0);
 }
 
-/* 通过过程基址求上l层过程的基址 */
+/* 通过过程基址求上 l 层过程的基址 */
 int base(int l, int* s, int b)
 {
 	int b1;

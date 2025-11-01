@@ -406,7 +406,7 @@ int getsym()
 					}
 					else
 					{
-						/* 新增：识别 ++ 和 -- */
+						/* 识别 ++, --, +=, -= */
 						if (ch == '+')
 						{
 							getchdo;
@@ -415,10 +415,14 @@ int getsym()
 								sym = plusplus;
 								getchdo;
 							}
+							else if (ch == '=')
+							{
+								sym = plusequal;
+								getchdo;
+							}
 							else
 							{
 								sym = plus;
-								/* ch 已指向下一字符，无需再 getchdo */
 							}
 						}
 						else if (ch == '-')
@@ -429,10 +433,42 @@ int getsym()
 								sym = minusminus;
 								getchdo;
 							}
+							else if (ch == '=')
+							{
+								sym = minusequal;
+								getchdo;
+							}
 							else
 							{
 								sym = minus;
-								/* ch 已指向下一字符，无需再 getchdo */
+							}
+						}
+						/* 识别 *= */
+						else if (ch == '*')
+						{
+							getchdo;
+							if (ch == '=')
+							{
+								sym = timesequal;
+								getchdo;
+							}
+							else
+							{
+								sym = times;
+							}
+						}
+						/* 识别 /= */
+						else if (ch == '/')
+						{
+							getchdo;
+							if (ch == '=')
+							{
+								sym = slashequal;
+								getchdo;
+							}
+							else
+							{
+								sym = slash;
 							}
 						}
 						else
@@ -921,6 +957,37 @@ int statement(bool* fsys, int* ptx, int lev)
 					gendo(sto, lev - table[i].level, table[i].adr);
 				}
 				getsymdo;
+				return 0;
+			}
+
+			/* 复合赋值运算符 +=, -=, *=, /= */
+			if (sym == plusequal || sym == minusequal || sym == timesequal || sym == slashequal)
+			{
+				if (table[i].kind != variable)
+				{
+					error(12); /* 只能对变量使用复合赋值 */
+				}
+				else
+				{
+					enum symbol op = sym; /* 保存运算符 */
+					getsymdo;
+					/* 生成：lod var; 计算右侧表达式; 对应运算; sto var */
+					gendo(lod, lev - table[i].level, table[i].adr);
+					memcpy(nxtlev, fsys, sizeof(bool)*symnum);
+					expressiondo(nxtlev, ptx, lev);
+					
+					/* 根据运算符生成对应指令 */
+					if (op == plusequal)
+						gendo(opr, 0, 2); /* 加法 */
+					else if (op == minusequal)
+						gendo(opr, 0, 3); /* 减法 */
+					else if (op == timesequal)
+						gendo(opr, 0, 4); /* 乘法 */
+					else if (op == slashequal)
+						gendo(opr, 0, 5); /* 除法 */
+					
+					gendo(sto, lev - table[i].level, table[i].adr);
+				}
 				return 0;
 			}
 
